@@ -4,12 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Package as PackageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 type Product = {
   id: string; name: string; description: string | null; price: number;
@@ -70,83 +70,97 @@ export default function Products() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-display font-bold">Produits & Services</h1>
-        <Button onClick={() => { resetForm(); setEditing(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" /> Nouveau produit</Button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <PackageIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-display font-bold text-foreground">Produits & Services</h1>
+            <p className="text-xs text-muted-foreground">{products.length} élément{products.length !== 1 ? "s" : ""}</p>
+          </div>
+        </div>
+        <Button variant="premium" onClick={() => { resetForm(); setEditing(null); setDialogOpen(true); }}>
+          <Plus className="h-4 w-4 mr-2" /> Nouveau produit
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
+        <div className="p-4 border-b border-border/30">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 premium-input" />
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Prix (FCFA)</TableHead>
-                <TableHead>TVA (%)</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+              <TableRow className="border-border/20 hover:bg-transparent">
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Nom</TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Prix (FCFA)</TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">TVA</TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Catégorie</TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Type</TableHead>
+                <TableHead className="w-[100px] text-xs uppercase tracking-wider text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell>{p.price.toLocaleString("fr-FR")}</TableCell>
-                  <TableCell>{p.tva_rate ?? 0}%</TableCell>
-                  <TableCell>{p.category || "-"}</TableCell>
-                  <TableCell>{p.is_service ? "Service" : "Produit"}</TableCell>
+                <TableRow key={p.id} className="premium-table-row border-border/10">
+                  <TableCell className="font-medium text-foreground">{p.name}</TableCell>
+                  <TableCell className="text-foreground font-semibold">{p.price.toLocaleString("fr-FR")}</TableCell>
+                  <TableCell className="text-muted-foreground">{p.tva_rate ?? 0}%</TableCell>
+                  <TableCell className="text-muted-foreground">{p.category || "-"}</TableCell>
+                  <TableCell>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${p.is_service ? "bg-blue-500/15 text-blue-400 border border-blue-500/20" : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"}`}>
+                      {p.is_service ? "Service" : "Produit"}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)} className="hover:bg-primary/10 hover:text-primary"><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)} className="hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun produit trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-12">Aucun produit trouvé</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </motion.div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Modifier" : "Nouveau produit"}</DialogTitle></DialogHeader>
+        <DialogContent className="glass-card border-border/30">
+          <DialogHeader><DialogTitle className="font-display">{editing ? "Modifier" : "Nouveau produit"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Nom *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label>Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Prix (FCFA) *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-              <div><Label>TVA (%)</Label><Input type="number" value={form.tva_rate} onChange={(e) => setForm({ ...form, tva_rate: e.target.value })} /></div>
+            <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Nom *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="premium-input" /></div>
+            <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="premium-input" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Prix (FCFA) *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="premium-input" /></div>
+              <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">TVA (%)</Label><Input type="number" value={form.tva_rate} onChange={(e) => setForm({ ...form, tva_rate: e.target.value })} className="premium-input" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Catégorie</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
-              <div><Label>Unité</Label><Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Catégorie</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="premium-input" /></div>
+              <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Unité</Label><Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="premium-input" /></div>
             </div>
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="is_service" checked={form.is_service} onChange={(e) => setForm({ ...form, is_service: e.target.checked })} />
-              <Label htmlFor="is_service">C'est un service</Label>
+              <input type="checkbox" id="is_service" checked={form.is_service} onChange={(e) => setForm({ ...form, is_service: e.target.checked })} className="accent-primary" />
+              <Label htmlFor="is_service" className="text-sm text-muted-foreground">C'est un service</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave}>{editing ? "Modifier" : "Ajouter"}</Button>
+            <Button variant="premium" onClick={handleSave}>{editing ? "Modifier" : "Ajouter"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-card border-border/30">
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce produit ?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">Supprimer ce produit ?</AlertDialogTitle>
             <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
