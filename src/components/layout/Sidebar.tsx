@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Package, FileText, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Package, FileText, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -29,23 +29,34 @@ export default function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex flex-col h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300",
-          collapsed ? "w-[68px]" : "w-[240px]"
+          "flex flex-col h-screen border-r border-sidebar-border transition-all duration-300 relative",
+          collapsed ? "w-[72px]" : "w-[250px]"
         )}
+        style={{ background: "hsl(var(--sidebar-background))" }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-          {!collapsed && <h1 className="text-lg font-display font-bold text-primary">Fact-Digit</h1>}
+        {/* Gold top line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px]" style={{ background: "var(--gold-gradient)", opacity: 0.4 }} />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-5 border-b border-sidebar-border">
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-lg font-display font-bold gold-text">Fact-Digit</span>
+            </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
-            className="text-sidebar-foreground hover:bg-sidebar-accent h-8 w-8"
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary h-8 w-8"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
 
-        <nav className="flex-1 py-4 space-y-1 px-2">
+        {/* Nav */}
+        <nav className="flex-1 py-4 space-y-1 px-3">
           {navItems.map(({ to, icon: Icon, label }) => (
             <Tooltip key={to}>
               <TooltipTrigger asChild>
@@ -53,10 +64,10 @@ export default function Sidebar() {
                   to={to}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium group",
                       isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
+                        ? "bg-primary/15 text-primary border border-primary/20"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground border border-transparent"
                     )
                   }
                 >
@@ -66,23 +77,24 @@ export default function Sidebar() {
                   {!collapsed && <span>{label}</span>}
                 </NavLink>
               </TooltipTrigger>
-              {collapsed && <TooltipContent side="right">{label}</TooltipContent>}
+              {collapsed && <TooltipContent side="right" className="glass-card text-foreground border-border/50">{label}</TooltipContent>}
             </Tooltip>
           ))}
         </nav>
 
-        <div className="p-2 border-t border-sidebar-border">
+        {/* Logout */}
+        <div className="p-3 border-t border-sidebar-border">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 border border-transparent"
               >
                 <LogOut className="h-[18px] w-[18px]" />
                 {!collapsed && <span>Déconnexion</span>}
               </button>
             </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">Déconnexion</TooltipContent>}
+            {collapsed && <TooltipContent side="right" className="glass-card text-foreground border-border/50">Déconnexion</TooltipContent>}
           </Tooltip>
         </div>
       </aside>
