@@ -21,6 +21,16 @@ export default function Auth() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (companyId) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/company-setup", { replace: true });
+      }
+    }
+  }, [user, authLoading, companyId, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
