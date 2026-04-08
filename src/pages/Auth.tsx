@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import { Sparkles } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { user, loading: authLoading, companyId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -18,6 +20,16 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (companyId) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/company-setup", { replace: true });
+      }
+    }
+  }, [user, authLoading, companyId, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

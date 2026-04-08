@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,23 +7,64 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Building2, Sparkles } from "lucide-react";
+import { Building2, ImagePlus, X } from "lucide-react";
 
 export default function CompanySetup() {
-  const { user } = useAuth();
+  const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     company_name: "", company_address: "", company_phone: "", company_email: "",
     company_rccm: "", company_numero_cc: "", first_name: "", last_name: "", phone: "",
   });
+
+  // If company already exists, go to dashboard
+  if (companyId) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Fichier invalide", description: "Veuillez sélectionner une image.", variant: "destructive" });
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadLogo = async (companyId: string): Promise<string | null> => {
+    if (!logoFile) return null;
+    const ext = logoFile.name.split(".").pop();
+    const filePath = `${companyId}/logo.${ext}`;
+    const { error } = await supabase.storage.from("company-logos").upload(filePath, logoFile, { upsert: true });
+    if (error) {
+      console.error("Logo upload error:", error);
+      return null;
+    }
+    const { data } = supabase.storage.from("company-logos").getPublicUrl(filePath);
+    return data.publicUrl;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !form.company_name) return;
     setLoading(true);
     try {
-      const { error } = await supabase.rpc("create_company_for_signup", {
+      const { data: newCompanyId, error } = await supabase.rpc("create_company_for_signup", {
         _user_id: user.id,
         _company_name: form.company_name,
         _company_address: form.company_address || undefined,
@@ -36,6 +77,15 @@ export default function CompanySetup() {
         _user_phone: form.phone || undefined,
       });
       if (error) throw error;
+
+      // Upload logo if selected
+      if (logoFile && newCompanyId) {
+        const logoUrl = await uploadLogo(newCompanyId);
+        if (logoUrl) {
+          await supabase.from("companies_fact_digit2").update({ logo_url: logoUrl }).eq("id", newCompanyId);
+        }
+      }
+
       toast({ title: "Entreprise créée avec succès !" });
       window.location.href = "/dashboard";
     } catch (error: any) {
@@ -65,6 +115,43 @@ export default function CompanySetup() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Logo upload */}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Logo de l'entreprise</Label>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50">
+                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-xl border-2 border-dashed border-border/50 flex items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                >
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="hidden"
+              />
+              {!logoPreview && (
+                <span className="text-xs text-muted-foreground">Cliquez pour ajouter un logo</span>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Nom de l'entreprise *</Label><Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} required className="premium-input" /></div>
           <div className="space-y-2"><Label className="text-xs uppercase tracking-wider text-muted-foreground">Adresse</Label><Input value={form.company_address} onChange={(e) => setForm({ ...form, company_address: e.target.value })} className="premium-input" /></div>
           <div className="grid grid-cols-2 gap-3">
