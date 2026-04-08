@@ -37,7 +37,7 @@ export default function CompanySetup() {
       });
       if (error) throw error;
       toast({ title: "Entreprise créée avec succès !" });
-      window.location.href = "/dashboard";
+      navigate("/dashboard");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {

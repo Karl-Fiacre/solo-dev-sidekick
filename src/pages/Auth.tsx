@@ -23,9 +23,18 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
+      const { error, data } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
       if (error) throw error;
-      navigate("/dashboard");
+      const { data: profile } = await supabase
+        .from("profiles_fact_digit2")
+        .select("company_id")
+        .eq("user_id", data.user.id)
+        .single();
+      if (profile?.company_id) {
+        navigate("/dashboard");
+      } else {
+        navigate("/company-setup");
+      }
     } catch (error: any) {
       toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
     } finally {
@@ -37,12 +46,16 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email: signupEmail, password: signupPassword,
         options: { data: { first_name: firstName, last_name: lastName, role_fact_digit2: "user" } },
       });
       if (error) throw error;
-      toast({ title: "Inscription réussie", description: "Vérifiez votre email pour confirmer votre compte." });
+      if (data.session) {
+        navigate("/company-setup");
+      } else {
+        toast({ title: "Inscription réussie", description: "Vérifiez votre email pour confirmer votre compte." });
+      }
     } catch (error: any) {
       toast({ title: "Erreur d'inscription", description: error.message, variant: "destructive" });
     } finally {
