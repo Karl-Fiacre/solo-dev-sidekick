@@ -15,10 +15,11 @@ import CompanySetup from "@/pages/CompanySetup";
 import AppLayout from "@/components/layout/AppLayout";
 import NotFound from "@/pages/NotFound";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function ProtectedRoute({ children, requireCompany = true }: { children: React.ReactNode; requireCompany?: boolean }) {
+  const { user, loading, companyId } = useAuth();
   if (loading) return <div className="flex items-center justify-center min-h-screen"><p>Chargement...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
+  if (requireCompany && !companyId) return <Navigate to="/company-setup" replace />;
   return <>{children}</>;
 }
 
@@ -30,7 +31,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/company-setup" element={<ProtectedRoute><CompanySetup /></ProtectedRoute>} />
+        <Route path="/company-setup" element={<ProtectedRoute requireCompany={false}><CompanySetup /></ProtectedRoute>} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/clients" element={<Clients />} />
